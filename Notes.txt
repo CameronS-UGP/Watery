@@ -1,0 +1,14 @@
+Report ideas
+
+For HCI we could use email or phone notifications instead
+this has the advantage of being less invasive and more acceptable than an annoying noise
+also makes them more likely to not disrupt their day
+Has a lower chance of getting the user to drink
+
+
+Libraries the project needs
+math - default library
+time - default library
+matplotlib
+hx711
+RPI.GPIO

@@ -1,13 +1,16 @@
 import time
+import math
 import matplotlib.pyplot as plt
 current_time = [0,0] # [Hours, Mins]
 previous_time = [0,0] # [Hours, Mins]
 difference_time = [0,0] # [Hours, Mins]
 timeThreshold = [0,10] # [Hours, Mins]
-current_fluid = 100 #%
-previous_fluid = 100 #%
+weight_of_container_empty = 1000 # needed for scales to be calabrated
+weight_of_container_full = 5000 # needed for scales to be calabrated
+current_fluid = weight_of_container_full - weight_of_container_empty #ml
+previous_fluid = weight_of_container_full - weight_of_container_empty #ml
 toldtodrink = False
-
+         
 #check the time passed
 #if the time passed is over a certain threshold tell the user to drink
 #check fluid level
@@ -36,7 +39,11 @@ t = time.localtime()
 t = time.strftime("%H:%M:%S", t)
 
 previous_time = [int(t[0:2]),int(t[3:5])]
+#read in fluid level
+#current_fluid = readinfluid
+#previous_fluid = current_fluid
 while i!=0:
+    toldtodrink = False
     t = time.localtime()
     t = time.strftime("%H:%M:%S", t) #t[0:2] Hours t[3:5] Mins t[6:8] seconds
     print(t)
@@ -54,8 +61,11 @@ while i!=0:
     # compare current_fluid level and previous fluid level
     # record the differnce
     # if there is a change reset difference_time
-    
-    #read in fluid level
+
+    # ---------------- uncomment line below when weight can be read
+    # current_fluid = readFluid() - weight_of_container_empty #<---- some function that returns the current weight
+    # ----------------
+
     if current_fluid > previous_fluid: #check if the container was filled
         difference_fluid = current_fluid
     else:
@@ -65,11 +75,15 @@ while i!=0:
         difference_time = [0,0] #reset the timer
 
 
-    '''
-    if  fluid_level < 10%:
-        alert the user to refill
-    elif fluid_levle <2%:
-        alert the user to refill continuosly
+    ''' uncomment when GPIO avaliable
+    if current_fluid < ((weight_of_container_full - weight_of_container_empty)*0.2): #if fluid level less than 20%
+        turn on GPIO pin for buzzer and LED
+        time.sleep(2) # wait 2 seconds
+        turn off GPIO pin for buzzer and LED
+    if currect_fluid < ((weight_of_container_full - weight_of_container_empty)*0.05): #if fluid level less than 5%
+        turn on GPIO pin for buzzer and LED
+        time.sleep(5) # wait 5 seconds
+        turn off GPIO pin for buzzer and LED
     '''
     #set toldtodrink to true
     #if next cycle they drink mark it as true in the file
@@ -89,13 +103,29 @@ while i!=0:
             break #remove after testing
     i+=1
     # write current_time,differnet_fluid to file
-    write = str(current_time)+","+str(difference_fluid)+"\n"
+    write = str(current_time)+","+str(difference_fluid)+","+toldtodrink+"\n"
     with open("data.txt",'a') as f:
         f.write(write)
     
     time.sleep(10)
 
+'''
+What does our data mean?
+What are we going to do with it?
 
+Data.txt should clear after a week or have a mark for what day it is
+Write toldToDrink to file so points on the graph can be marked
+
+Plot fluid level against time not change in fluid level against time
+the function that makes the graph should work out how accurate the warnings are 
+- (did they drink when told to or did they leave it longer)
+- (if they left it longer, how much longer)
+- (was this wait consistent)
+- (if it was, the time between warnings should be adjusted)
+- (how much did they drink in a day)
+- (did they drink enough according to national recommended average intake)
+
+'''
 def convertTime(time):
     hours = int(time[0:2])
     mins = int(time[4:])
@@ -109,6 +139,8 @@ def plot(path):
     #plot the change in fluid level over time to show them there own drinking habbits
     data1 = []
     data2 = []
+    fluid = weight_of_container_full #assume container was full or read in the first value and set that as "full"
+    totalDrank = 0
     with open(path,"r") as f:
         #read a line
         for i,a in enumerate(f.readlines()):
@@ -117,7 +149,10 @@ def plot(path):
             time = data[0][1:]+":"+data[1][:(len(data[1])-1)]
             #print(time)
             time = convertTime(time)
-            fluid = int(data[2][:(len(data[2])-1)])+i
+            #print("Old Fluid :",fluid)
+            totalDrank += (int(data[2][:(len(data[2])-1)])) #remove +i when actual data has been gathered
+            fluid = fluid - (int(data[2][:(len(data[2])-1)])) #remove +i when actual data has been gathered
+            #print("New Fluid :",fluid)
             #print(fluid)
             #print(time)
             #plot it as a line graph
@@ -126,11 +161,71 @@ def plot(path):
             
         
     plt.plot(data1,data2)  
-    plt.title("Fluid intake over a day")
-    plt.xlabel("Time (minutes)")
-    plt.ylabel("Fluid level (%)")
+    plt.title("Change In Fluid Over a Day")
+    plt.xlabel("Time (minutes) Of a Day")
+    plt.ylabel("Fluid level of container")
     plt.grid(True)
-    plt.show()    
+    print(str(totalDrank)+"%")
+    plt.show()  
 
-plot("data.txt")
+#plot("data.txt")    
+
+def calabrate(path):
+    #read in the data
+    #look at "toldToDrink"
+    #did the fluid change within 3 cycles of the warning
+    #if yes leave the warning time as is
+    #if not how often did this happen
+    #if it happened more than once how long after the warning did they drink
+    #adjust time to be closer to when they actually drank
+
+
+    #did they drink the recommended national average
+    #where they close to it?
+    #if not make the time more frequent
+    national_average = 10 #ml (if fluid level is a percent then convert using weight of container)
+    totalDrank = 0
+    data = []
+    with open(path,"r") as f:
+        #read a line
+        for i,a in enumerate(f.readlines()):
+            data =  a.split(",")
+            time = data[0][1:]+":"+data[1][:(len(data[1])-1)]
+            #print(time)
+            time = convertTime(time)
+            #print("Old Fluid :",fluid)
+            totalDrank += (int(data[2][:(len(data[2])-1)])+i) #remove +i when actual data has been gathered
+            data.append([time,totalDrank])
+    #figure out at what point they drank the national average
+    #if they met this or got close to it by the end of the day (data set)
+    #return
+    prev_total = 0
+    count = 0
+    for i,a in enumerate(data):
+        if(prev_total != a[i][1]): #if the total drank changed
+            count+=1 # count the amount of times they drink
+        prev_total = a[i][1]
+        if(a[i][1] >= national_average):
+            return 0
+    average_drank = int(data[-1][1]) / int(count)
+    #work out the difference between nation average and total consumed
+    diff_average = national_average - data[-1][1]
+    if diff_average > 0:
+        #how many more time would they need to drink a day
+        extra_drinks = diff_average / average_drank
+    #count is the amount of times they drank
+    #they need to drink count+extra_drinks over the same time preiod
+    #take the total time (in mins) and divide it by count+extra_drinks
+    newTimethreshold = int(data[-1][0])/ (count+extra_drinks)
+    thing = []
+    if(newTimethreshold > 60):
+        thing[0] = math.floor(newTimethreshold/60)
+        newTimethreshold = newTimethreshold%60
+        thing[1] = newTimethreshold
+    else:
+        thing[0] = 0
+        thing[1] = newTimethreshold
+    return thing # represents the time threshold in the format [hours, mins]
+
+
 
