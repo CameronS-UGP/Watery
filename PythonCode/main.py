@@ -1,6 +1,12 @@
 import time
 import math
 import matplotlib.pyplot as plt
+from bottleScale import Board
+
+# set up scale
+raspberry_pi = Board(dt_pin=6, sck_pin=5, led_pin=9999, buzz_pin=9999)  # Note: Determine pins for LED and buzzer
+raspberry_pi.calibrateScale()  # Calibrate scale to read grams
+
 current_time = [0,0] # [Hours, Mins]
 previous_time = [0,0] # [Hours, Mins]
 difference_time = [0,0] # [Hours, Mins]
@@ -63,7 +69,7 @@ while i!=0:
     # if there is a change reset difference_time
 
     # ---------------- uncomment line below when weight can be read
-    # current_fluid = readFluid() - weight_of_container_empty #<---- some function that returns the current weight
+    current_fluid = raspberry_pi.hx.get_weight_mean(20) - weight_of_container_empty #<---- some function that returns the current weight
     # ----------------
 
     if current_fluid > previous_fluid: #check if the container was filled
@@ -85,6 +91,15 @@ while i!=0:
         time.sleep(5) # wait 5 seconds
         turn off GPIO pin for buzzer and LED
     '''
+
+    # to run buzzer and LED alarm sequence
+    # on_interval: how long it stays on for, and vice versa for off_interval (in seconds, floats can be used)
+    # iterations is how many times it will do that
+
+    # for example, buzzer and LED will sound/light for 2 seconds, the stay off for 2 seconds, 5 times
+    raspberry_pi.buzzLED_alarm(on_interval=2, off_interval=2, iterations=5)
+
+
     #set toldtodrink to true
     #if next cycle they drink mark it as true in the file
     #if they dont drink next cycle mark it as false
