@@ -45,10 +45,10 @@ t = time.localtime()
 t = time.strftime("%H:%M:%S", t)
 
 previous_time = [int(t[0:2]),int(t[3:5])]
-#read in fluid level
-#current_fluid = readinfluid
-#previous_fluid = current_fluid
-while i!=0:
+#read in fluid level <------ after calibration this needs to happen
+current_fluid = raspberry_pi.hx.get_weight_mean(20) - weight_of_container_empty
+previous_fluid = current_fluid
+while i != 0:
     toldtodrink = False
     t = time.localtime()
     t = time.strftime("%H:%M:%S", t) #t[0:2] Hours t[3:5] Mins t[6:8] seconds
@@ -81,23 +81,18 @@ while i!=0:
         difference_time = [0,0] #reset the timer
 
 
-    ''' uncomment when GPIO avaliable
+
     if current_fluid < ((weight_of_container_full - weight_of_container_empty)*0.2): #if fluid level less than 20%
-        turn on GPIO pin for buzzer and LED
-        time.sleep(2) # wait 2 seconds
-        turn off GPIO pin for buzzer and LED
-    if currect_fluid < ((weight_of_container_full - weight_of_container_empty)*0.05): #if fluid level less than 5%
-        turn on GPIO pin for buzzer and LED
-        time.sleep(5) # wait 5 seconds
-        turn off GPIO pin for buzzer and LED
-    '''
+        raspberry_pi.buzzLED_alarm(on_interval=3, off_interval=1, iterations=3)
+
+
 
     # to run buzzer and LED alarm sequence
     # on_interval: how long it stays on for, and vice versa for off_interval (in seconds, floats can be used)
     # iterations is how many times it will do that
 
     # for example, buzzer and LED will sound/light for 2 seconds, the stay off for 2 seconds, 5 times
-    raspberry_pi.buzzLED_alarm(on_interval=2, off_interval=2, iterations=5)
+    # raspberry_pi.buzzLED_alarm(on_interval=2, off_interval=2, iterations=5)
 
 
     #set toldtodrink to true
@@ -105,14 +100,9 @@ while i!=0:
     #if they dont drink next cycle mark it as false
 
     #check time
-    if difference_time[0] > timeThreshold[0]:
-        #alert user 
-        toldtodrink = True
-        difference_time = [0,0]
-        break #remove after testing
-    elif difference_time[0] == timeThreshold[0]:
+    if difference_time[0] >= timeThreshold[0]:
         if difference_time[1] >= timeThreshold[1]:
-            #alert user
+            raspberry_pi.buzzLED_alarm(on_interval=1, off_interval=1, iterations=3)
             toldtodrink = True
             difference_time = [0,0]
             break #remove after testing
