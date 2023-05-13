@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
 import RPi.GPIO as GPIO  # import GPIO
 from hx711 import HX711  # import the class HX711
+from time import sleep
 
-
+# Note: In order the use the scales, calibration sequence must be run before it
+# can output a weight in grams.
 class Board:
+    # Instructions:
+    # Upon creating Board() instance, pass the GPIO Broadcom numbering of the following
+    # Board(Data, Clock, LED, Buzzer)
     def __init__(self, dt_pin, sck_pin, led_pin, buzz_pin):
         # Setup up HX711 object for board object
         try:
-            GPIO.setmode(GPIO.BCM)  # set GPIO pin mode to BCM numbering
+            GPIO.setmode(GPIO.BCM)  # set GPIO pin mode to BCM numbering (Broadcom)
             # Create an object hx which represents your real hx711 chip
             # Required input parameters are only 'dout_pin' and 'pd_sck_pin'
             newHx = HX711(dout_pin=dt_pin, pd_sck_pin=sck_pin)  # Note: Blue(SCK) to GPIO 5 and green (DT) to GPIO 6
@@ -78,15 +83,11 @@ class Board:
             # Read data several times and return mean value
             # subtracted by offset and converted by scale ratio to
             # desired units. In my case in grams.
-            print("Now, I will read data in infinite loop. To exit press 'CTRL + C'")
-            input('Press Enter to begin reading')
-            print('Current weight on the scale in grams is: ')
-            while True:
-                curWeight = self.hx.get_weight_mean(20)
+            curWeight = self.hx.get_weight_mean(20)
 
-                print(curWeight, 'g')
+            print(curWeight, 'g')
 
-                return curWeight
+            return curWeight
 
         except (KeyboardInterrupt, SystemExit):
             print('Exiting Code: 1')
@@ -94,3 +95,48 @@ class Board:
         finally:
             GPIO.cleanup()
 
+    def buzzLED_switchOn(self):
+        try:
+            GPIO.setmode(GPIO.BCM)
+
+            GPIO.setup(self.led_pin, GPIO.OUT)  # set up channel for LED
+            GPIO.setup(self.buzz_pin, GPIO.OUT)  # set up channel for buzzer
+
+            GPIO.output(self.led_pin, GPIO.HIGH)  # switch on LED
+            GPIO.output(self.buzz_pin, GPIO.HIGH)  # switch on buzzer
+
+        except (KeyboardInterrupt, SystemExit):
+            print('Exiting Code: 1')
+
+        finally:
+            GPIO.cleanup()
+
+    def buzzLED_switchOff(self):
+        try:
+            GPIO.setmode(GPIO.BCM)
+
+            GPIO.setup(self.led_pin, GPIO.OUT)  # set up channel for LED
+            GPIO.setup(self.buzz_pin, GPIO.OUT)  # set up channel for buzzer
+
+            GPIO.output(self.led_pin, GPIO.LOW)  # switch off LED
+            GPIO.output(self.buzz_pin, GPIO.LOW)  # switch off buzzer
+
+        except (KeyboardInterrupt, SystemExit):
+            print('Exiting Code: 1')
+
+        finally:
+            GPIO.cleanup()
+
+    def buzzLED_alarm(self, on_interval, off_interval, iterations):
+        try:
+            for i in range(iterations):
+                # Switch on for given interval
+                self.buzzLED_switchOn()
+                sleep(on_interval)
+
+                # Switch off for given interval
+                self.buzzLED_switchOff()
+                sleep(off_interval)
+
+        except (KeyboardInterrupt, SystemExit):
+            print('Exiting Code: 1')
