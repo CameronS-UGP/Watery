@@ -17,7 +17,8 @@ weight_of_container_full = 5000 # needed for scales to be calabrated
 current_fluid = weight_of_container_full - weight_of_container_empty #ml
 previous_fluid = weight_of_container_full - weight_of_container_empty #ml
 toldtodrink = False
-         
+
+
 #check the time passed
 #if the time passed is over a certain threshold tell the user to drink
 #check fluid level
