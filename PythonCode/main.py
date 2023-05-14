@@ -1,5 +1,6 @@
 import time
 import math
+import os
 import matplotlib.pyplot as plt
 from bottleScale import Board
 
@@ -10,7 +11,7 @@ raspberry_pi.calibrateScale()  # Calibrate scale to read grams
 current_time = [0,0] # [Hours, Mins]
 previous_time = [0,0] # [Hours, Mins]
 difference_time = [0,0] # [Hours, Mins]
-timeThreshold = [0,10] # [Hours, Mins]
+timeThreshold = [0,10] # [Hours, Mins] #should default to 1 hour
 weight_of_container_empty = 1000 # needed for scales to be calabrated
 weight_of_container_full = 5000 # needed for scales to be calabrated
 current_fluid = weight_of_container_full - weight_of_container_empty #ml
@@ -105,6 +106,8 @@ while i != 0:
             raspberry_pi.buzzLED_alarm(on_interval=1, off_interval=1, iterations=3)
             toldtodrink = True
             difference_time = [0,0]
+            if(os.path.exists("data.txt")):
+                timeThreshold = calabrate("data.txt")
             break #remove after testing
     i+=1
     # write current_time,differnet_fluid to file
@@ -188,7 +191,7 @@ def calabrate(path):
     #did they drink the recommended national average
     #where they close to it?
     #if not make the time more frequent
-    national_average = 10 #ml (if fluid level is a percent then convert using weight of container)
+    national_average = 1200 #ml (if fluid level is a percent then convert using weight of container)
     totalDrank = 0
     data = []
     with open(path,"r") as f:
