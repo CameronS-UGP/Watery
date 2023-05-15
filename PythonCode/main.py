@@ -2,20 +2,15 @@ import time
 import math
 import os
 import matplotlib.pyplot as plt
+import RPi.GPIO as GPIO
 from bottleScale import Board
-
-# set up scale
-raspberry_pi = Board(dt_pin=6, sck_pin=5, led_pin=9999, buzz_pin=9999)  # Note: Determine pins for LED and buzzer
-raspberry_pi.calibrateScale()  # Calibrate scale to read grams
 
 current_time = [0,0] # [Hours, Mins]
 previous_time = [0,0] # [Hours, Mins]
 difference_time = [0,0] # [Hours, Mins]
 timeThreshold = [0,10] # [Hours, Mins] #should default to 1 hour
-weight_of_container_empty = 1000 # needed for scales to be calabrated
-weight_of_container_full = 5000 # needed for scales to be calabrated
-current_fluid = weight_of_container_full - weight_of_container_empty #ml
-previous_fluid = weight_of_container_full - weight_of_container_empty #ml
+weight_of_container_empty = 20 # needed for scales to be calabrated
+weight_of_container_full = 500 # needed for scales to be calabrated
 toldtodrink = False
 
 
@@ -41,82 +36,7 @@ def addtime(time, amount):
         newDays+=1
     return [newDays, newHours, newMins]
 
-#getTime
-i=0
-t = time.localtime()
-t = time.strftime("%H:%M:%S", t)
 
-previous_time = [int(t[0:2]),int(t[3:5])]
-#read in fluid level <------ after calibration this needs to happen
-current_fluid = raspberry_pi.hx.get_weight_mean(20) - weight_of_container_empty
-previous_fluid = current_fluid
-while i != 0:
-    toldtodrink = False
-    t = time.localtime()
-    t = time.strftime("%H:%M:%S", t) #t[0:2] Hours t[3:5] Mins t[6:8] seconds
-    print(t)
-    hours = t[0:2]
-    mins = t[3:5]
-    current_time = [int(hours),int(mins)]
-    difference_time[0] += current_time[0] - previous_time[0]
-    difference_time[1] += current_time[1] - previous_time[1]
-    if(difference_time[1] >59):
-        difference_time[0]+=1
-        difference_time[1]-=60
-    previous_time = current_time
-    
-    #check fluid level
-    # compare current_fluid level and previous fluid level
-    # record the differnce
-    # if there is a change reset difference_time
-
-    # ---------------- uncomment line below when weight can be read
-    current_fluid = raspberry_pi.hx.get_weight_mean(20) - weight_of_container_empty #<---- some function that returns the current weight
-    # ----------------
-
-    if current_fluid > previous_fluid: #check if the container was filled
-        difference_fluid = current_fluid
-    else:
-        difference_fluid = previous_fluid - current_fluid 
-    previous_fluid = current_fluid
-    if difference_fluid != 0 and difference_fluid > 0: #there was a change and the contain was not filled up
-        difference_time = [0,0] #reset the timer
-
-
-
-    if current_fluid < ((weight_of_container_full - weight_of_container_empty)*0.2): #if fluid level less than 20%
-        raspberry_pi.buzzLED_alarm(on_interval=3, off_interval=1, iterations=3)
-
-
-
-    # to run buzzer and LED alarm sequence
-    # on_interval: how long it stays on for, and vice versa for off_interval (in seconds, floats can be used)
-    # iterations is how many times it will do that
-
-    # for example, buzzer and LED will sound/light for 2 seconds, the stay off for 2 seconds, 5 times
-    # raspberry_pi.buzzLED_alarm(on_interval=2, off_interval=2, iterations=5)
-
-
-    #set toldtodrink to true
-    #if next cycle they drink mark it as true in the file
-    #if they dont drink next cycle mark it as false
-
-    #check time
-    if difference_time[0] >= timeThreshold[0]:
-        if difference_time[1] >= timeThreshold[1]:
-            raspberry_pi.buzzLED_alarm(on_interval=1, off_interval=1, iterations=3)
-            toldtodrink = True
-            difference_time = [0,0]
-            if(os.path.exists("data.txt")):
-                timeThreshold = calabrate("data.txt")
-            break #remove after testing
-    i+=1
-    # write current_time,differnet_fluid to file
-    write = str(current_time)+","+str(difference_fluid)+","+toldtodrink+"\n"
-    with open("data.txt",'a') as f:
-        f.write(write)
-    
-    time.sleep(10)
 
 '''
 What does our data mean?
@@ -236,5 +156,90 @@ def calabrate(path):
         thing[1] = newTimethreshold
     return thing # represents the time threshold in the format [hours, mins]
 
+try:
+    # Note: Blue(SCK) to GPIO 5 and green (DT) to GPIO 6
+    #       Blue(LED) to GPIO 16 and orange (BUzzer) to GPIO to 12
 
+    # set up scale
+    raspberry_pi = Board(dt_pin=6, sck_pin=5, led_pin=16, buzz_pin=12)  # Note: Determine pins for LED and buzzer
+    raspberry_pi.calibrateScale()  # Calibrate scale to read grams
+
+    # getTime
+    i = 0
+    t = time.localtime()
+    t = time.strftime("%H:%M:%S", t)
+
+    previous_time = [int(t[0:2]), int(t[3:5])]
+    # read in fluid level <------ after calibration this needs to happen
+    current_fluid = raspberry_pi.hx.get_weight_mean(20) - weight_of_container_empty
+    previous_fluid = current_fluid
+    while True:
+        toldtodrink = False
+        t = time.localtime()
+        t = time.strftime("%H:%M:%S", t)  # t[0:2] Hours t[3:5] Mins t[6:8] seconds
+        print(t)
+        hours = t[0:2]
+        mins = t[3:5]
+        current_time = [int(hours), int(mins)]
+        difference_time[0] += current_time[0] - previous_time[0]
+        difference_time[1] += current_time[1] - previous_time[1]
+        if (difference_time[1] > 59):
+            difference_time[0] += 1
+            difference_time[1] -= 60
+        previous_time = current_time
+
+        # check fluid level
+        # compare current_fluid level and previous fluid level
+        # record the differnce
+        # if there is a change reset difference_time
+
+        # ---------------- uncomment line below when weight can be read
+        current_fluid = raspberry_pi.hx.get_weight_mean(
+            20) - weight_of_container_empty  # <---- some function that returns the current weight
+        # ----------------
+
+        if current_fluid > previous_fluid:  # check if the container was filled
+            difference_fluid = current_fluid
+        else:
+            difference_fluid = previous_fluid - current_fluid
+        previous_fluid = current_fluid
+        if difference_fluid != 0 and difference_fluid > 0:  # there was a change and the contain was not filled up
+            difference_time = [0, 0]  # reset the timer
+
+        if current_fluid < ((weight_of_container_full - weight_of_container_empty) * 0.2):  # if fluid level less than 20%
+            raspberry_pi.buzzLED_alarm(on_interval=3, off_interval=1, iterations=3)
+
+        # to run buzzer and LED alarm sequence
+        # on_interval: how long it stays on for, and vice versa for off_interval (in seconds, floats can be used)
+        # iterations is how many times it will do that
+
+        # for example, buzzer and LED will sound/light for 2 seconds, the stay off for 2 seconds, 5 times
+        # raspberry_pi.buzzLED_alarm(on_interval=2, off_interval=2, iterations=5)
+
+        # set toldtodrink to true
+        # if next cycle they drink mark it as true in the file
+        # if they dont drink next cycle mark it as false
+
+        # check time
+        if difference_time[0] >= timeThreshold[0]:
+            if difference_time[1] >= timeThreshold[1]:
+                raspberry_pi.buzzLED_alarm(on_interval=1, off_interval=1, iterations=3)
+                toldtodrink = True
+                difference_time = [0, 0]
+                if (os.path.exists("data.txt")):
+                    timeThreshold = calabrate("data.txt")
+                break  # remove after testing
+        i += 1
+        # write current_time,differnet_fluid to file
+        write = str(current_time) + "," + str(difference_fluid) + "," + toldtodrink + "\n"
+        with open("data.txt", 'a') as f:
+            f.write(write)
+
+        time.sleep(10)
+
+except (KeyboardInterrupt, SystemExit):
+    print('Exiting Code: 1')
+
+finally:
+    GPIO.cleanup()
 

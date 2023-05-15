@@ -21,8 +21,8 @@ class Board:
         except (KeyboardInterrupt, SystemExit):
             print('Exiting Code: 1')
 
-        finally:
-            GPIO.cleanup()
+        # finally:
+        #     GPIO.cleanup()
 
         self.led_pin = led_pin
         self.buzz_pin = buzz_pin
@@ -73,8 +73,8 @@ class Board:
         except (KeyboardInterrupt, SystemExit):
             print('Exiting Code: 1')
 
-        finally:
-            GPIO.cleanup()
+        # finally:
+        #     GPIO.cleanup()
 
     def getCurrentWeight(self):
         try:
@@ -92,8 +92,8 @@ class Board:
         except (KeyboardInterrupt, SystemExit):
             print('Exiting Code: 1')
 
-        finally:
-            GPIO.cleanup()
+        # finally:
+        #     GPIO.cleanup()
 
     def buzzLED_switchOn(self):
         try:
@@ -108,8 +108,8 @@ class Board:
         except (KeyboardInterrupt, SystemExit):
             print('Exiting Code: 1')
 
-        finally:
-            GPIO.cleanup()
+        # finally:
+        #     GPIO.cleanup()
 
     def buzzLED_switchOff(self):
         try:
@@ -124,8 +124,8 @@ class Board:
         except (KeyboardInterrupt, SystemExit):
             print('Exiting Code: 1')
 
-        finally:
-            GPIO.cleanup()
+        # finally:
+        #     GPIO.cleanup()
 
     def buzzLED_alarm(self, on_interval, off_interval, iterations):
         try:
