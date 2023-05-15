@@ -8,7 +8,7 @@ from bottleScale import Board
 current_time = [0,0] # [Hours, Mins]
 previous_time = [0,0] # [Hours, Mins]
 difference_time = [0,0] # [Hours, Mins]
-timeThreshold = [0,10] # [Hours, Mins] #should default to 1 hour
+timeThreshold = [0,1] # [Hours, Mins] #should default to 1 hour
 weight_of_container_empty = 20 # needed for scales to be calabrated
 weight_of_container_full = 500 # needed for scales to be calabrated
 toldtodrink = False
@@ -123,7 +123,7 @@ def calabrate(path):
             #print(time)
             time = convertTime(time)
             #print("Old Fluid :",fluid)
-            totalDrank += (int(data[2][:(len(data[2])-1)])+i) #remove +i when actual data has been gathered
+            totalDrank += (int(data[2][:(len(data[2])-1)])) #remove +i when actual data has been gathered
             data.append([time,totalDrank])
     #figure out at what point they drank the national average
     #if they met this or got close to it by the end of the day (data set)
@@ -131,6 +131,7 @@ def calabrate(path):
     prev_total = 0
     count = 0
     for i,a in enumerate(data):
+        print(data)
         if(prev_total != a[i][1]): #if the total drank changed
             count+=1 # count the amount of times they drink
         prev_total = a[i][1]
@@ -172,6 +173,7 @@ try:
     previous_time = [int(t[0:2]), int(t[3:5])]
     # read in fluid level <------ after calibration this needs to happen
     current_fluid = raspberry_pi.hx.get_weight_mean(20) - weight_of_container_empty
+    current_fluid = math.floor(current_fluid)
     previous_fluid = current_fluid
     while True:
         toldtodrink = False
@@ -197,13 +199,15 @@ try:
         current_fluid = raspberry_pi.hx.get_weight_mean(
             20) - weight_of_container_empty  # <---- some function that returns the current weight
         # ----------------
-
+        current_fluid = math.floor(current_fluid)
+        print("Fluid:",current_fluid)
+        #previous_fluid = math.floor(previous_fluid)
         if current_fluid > previous_fluid:  # check if the container was filled
             difference_fluid = current_fluid
         else:
             difference_fluid = previous_fluid - current_fluid
         previous_fluid = current_fluid
-        if difference_fluid != 0 and difference_fluid > 0:  # there was a change and the contain was not filled up
+        if difference_fluid != 0 and difference_fluid > 3:  # there was a change and the contain was not filled up
             difference_time = [0, 0]  # reset the timer
 
         if current_fluid < ((weight_of_container_full - weight_of_container_empty) * 0.2):  # if fluid level less than 20%
@@ -219,10 +223,14 @@ try:
         # set toldtodrink to true
         # if next cycle they drink mark it as true in the file
         # if they dont drink next cycle mark it as false
-
+        
+        print("Diff time:", difference_time)
+        print("Diff fluid:", difference_fluid, "\n")
         # check time
         if difference_time[0] >= timeThreshold[0]:
+            print("Testing First if")
             if difference_time[1] >= timeThreshold[1]:
+                print("Flashing")
                 raspberry_pi.buzzLED_alarm(on_interval=1, off_interval=1, iterations=3)
                 toldtodrink = True
                 difference_time = [0, 0]
@@ -231,7 +239,7 @@ try:
                 break  # remove after testing
         i += 1
         # write current_time,differnet_fluid to file
-        write = str(current_time) + "," + str(difference_fluid) + "," + toldtodrink + "\n"
+        write = str(current_time) + "," + str(difference_fluid)+"\n"
         with open("data.txt", 'a') as f:
             f.write(write)
 
