@@ -114,40 +114,53 @@ def calabrate(path):
     #if not make the time more frequent
     national_average = 1200 #ml (if fluid level is a percent then convert using weight of container)
     totalDrank = 0
-    data = []
+    data2 = []
     with open(path,"r") as f:
         #read a line
         for i,a in enumerate(f.readlines()):
-            data =  a.split(",")
+            data = a.split(",")
+            print(data)
             time = data[0][1:]+":"+data[1][:(len(data[1])-1)]
+            print("time",time)
             #print(time)
             time = convertTime(time)
+            print("Converted time",time)
             #print("Old Fluid :",fluid)
             totalDrank += (int(data[2][:(len(data[2])-1)])) #remove +i when actual data has been gathered
-            data.append([time,totalDrank])
+            print("drank",totalDrank)
+            data2.append([time,totalDrank])
     #figure out at what point they drank the national average
     #if they met this or got close to it by the end of the day (data set)
     #return
     prev_total = 0
     count = 0
-    for i,a in enumerate(data):
-        print(data)
-        if(prev_total != a[i][1]): #if the total drank changed
+    print("Data",data2)
+    for i,a in enumerate(data2):
+        #print(data)
+        #print("A",a[i])
+        if(prev_total != a[1] and a[1] != 0): #if the total drank changed
             count+=1 # count the amount of times they drink
-        prev_total = a[i][1]
-        if(a[i][1] >= national_average):
+        prev_total = a[1]
+        if(a[1] >= national_average):
+            print("returning 0")
             return 0
-    average_drank = int(data[-1][1]) / int(count)
+    print("Finished the for loop")
+    average_drank = int(data2[-1][1]) / int(count)
+    print("Average drank", average_drank)
     #work out the difference between nation average and total consumed
-    diff_average = national_average - data[-1][1]
-    if diff_average > 0:
+    diff_average = national_average - data2[-1][1]
+    print("Diff average",diff_average)
+    extra_drinks = 0
+    if diff_average > 0 and average_drank > 0:
         #how many more time would they need to drink a day
         extra_drinks = diff_average / average_drank
     #count is the amount of times they drank
     #they need to drink count+extra_drinks over the same time preiod
     #take the total time (in mins) and divide it by count+extra_drinks
-    newTimethreshold = int(data[-1][0])/ (count+extra_drinks)
-    thing = []
+    print(data2[-1][0])
+    newTimethreshold = math.ceil((convertTime("24:00") - int(data2[-1][0])) / extra_drinks)
+    thing = [0,0]
+    print("newtime",newTimethreshold)
     if(newTimethreshold > 60):
         thing[0] = math.floor(newTimethreshold/60)
         newTimethreshold = newTimethreshold%60
@@ -174,8 +187,9 @@ try:
     # read in fluid level <------ after calibration this needs to happen
     current_fluid = raspberry_pi.hx.get_weight_mean(20) - weight_of_container_empty
     current_fluid = math.floor(current_fluid)
+    current_fluid = 1
     previous_fluid = current_fluid
-    while True:
+    while i!=0:
         toldtodrink = False
         t = time.localtime()
         t = time.strftime("%H:%M:%S", t)  # t[0:2] Hours t[3:5] Mins t[6:8] seconds
@@ -196,8 +210,7 @@ try:
         # if there is a change reset difference_time
 
         # ---------------- uncomment line below when weight can be read
-        current_fluid = raspberry_pi.hx.get_weight_mean(
-            20) - weight_of_container_empty  # <---- some function that returns the current weight
+        current_fluid = raspberry_pi.hx.get_weight_mean(20) - weight_of_container_empty  # <---- some function that returns the current weight
         # ----------------
         current_fluid = math.floor(current_fluid)
         print("Fluid:",current_fluid)
@@ -251,3 +264,4 @@ except (KeyboardInterrupt, SystemExit):
 finally:
     GPIO.cleanup()
 
+#print(calabrate("data.txt"))
