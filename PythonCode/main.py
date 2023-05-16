@@ -4,6 +4,7 @@ import os
 import matplotlib.pyplot as plt
 import RPi.GPIO as GPIO
 from bottleScale import Board
+from time import sleep
 global timeThreshold
 
 current_time = [0,0] # [Hours, Mins]
@@ -37,8 +38,33 @@ def addtime(time, amount):
         newDays+=1
     return [newDays, newHours, newMins]
 
+def determineBottleWeights(raspberry_pi):
+    print("""
+Hi there! Welcome to the Watery water consumption observer. Thank you for 
+giving us a go. Before you can use Watery, we need to know the weight of
+your bottle when it is empty and when it filled up (or to the amount you
+usually fill it). To do so, just follow the next 2 steps.
+----------------------------------------------------------------------------
+Step 1:
+Please completely empty your water bottle (if it is not empty already and
+place it on the Watery measuring pad, then press Enter""")
+    input()
+    sleep(2)
+    emptyWeight = raspberry_pi.hx.get_weight_mean(20)
+
+    input("""
+Step 2:
+Next, please fill up your water bottle (or to where you normally fill it to)
+and place it on the Watery measuring pad, then press Enter""")
+    sleep(2)
+    fullWeight = raspberry_pi.hx.get_weight_mean(20)
+    print("\nThanks for completing the Watery set up.\n")
+
+    return emptyWeight, fullWeight
 
 
+
+#-------------------------------------------------------------------------
 '''
 What does our data mean?
 What are we going to do with it?
@@ -183,9 +209,20 @@ try:
     # Note: Blue(SCK) to GPIO 5 and green (DT) to GPIO 6
     #       Blue(LED) to GPIO 16 and orange (BUzzer) to GPIO to 12
 
+    print("------------------------- CALIBRATION OF LOAD CELL -------------------------")
     # set up scale
     raspberry_pi = Board(dt_pin=6, sck_pin=5, led_pin=16, buzz_pin=12)  # Note: Determine pins for LED and buzzer
     raspberry_pi.calibrateScale()  # Calibrate scale to read grams
+
+    print("""
+Please note, calibration is not part of the Watery functionality, it is
+present because the load cell needs calibration at start of every runtime. 
+The data for this could be saved, however, it is not currently implemented.
+This would not be presented to the end user.
+----------------------------------------------------------------------------""")
+
+    weight_of_container_empty, weight_of_container_full = determineBottleWeights(raspberry_pi)
+    print(weight_of_container_empty, weight_of_container_full)
 
     # getTime
     i = 1
