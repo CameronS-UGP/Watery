@@ -223,6 +223,8 @@ This would not be presented to the end user.
 
     weight_of_container_empty, weight_of_container_full = determineBottleWeights(raspberry_pi)
     print(weight_of_container_empty, weight_of_container_full)
+    
+    input("Hit Enter to start Watery\n")
 
     # getTime
     i = 1
