@@ -4,13 +4,14 @@ import os
 import matplotlib.pyplot as plt
 import RPi.GPIO as GPIO
 from bottleScale import Board
+global timeThreshold
 
 current_time = [0,0] # [Hours, Mins]
 previous_time = [0,0] # [Hours, Mins]
 difference_time = [0,0] # [Hours, Mins]
 timeThreshold = [0,1] # [Hours, Mins] #should default to 1 hour
-weight_of_container_empty = 20 # needed for scales to be calabrated
-weight_of_container_full = 500 # needed for scales to be calabrated
+weight_of_container_empty = 14 # needed for scales to be calabrated
+weight_of_container_full = 514 # needed for scales to be calabrated
 toldtodrink = False
 
 
@@ -119,14 +120,17 @@ def calabrate(path):
         #read a line
         for i,a in enumerate(f.readlines()):
             data = a.split(",")
-            print(data)
+            #print(data)
             time = data[0][1:]+":"+data[1][:(len(data[1])-1)]
-            print("time",time)
+            #print("time",time)
             #print(time)
             time = convertTime(time)
-            print("Converted time",time)
+            #print("Converted time",time)
             #print("Old Fluid :",fluid)
-            totalDrank += (int(data[2][:(len(data[2])-1)])) #remove +i when actual data has been gathered
+            fluidoverday = (int(data[2][:(len(data[2])-1)]))
+            if fluidoverday > 0:
+                totalDrank = fluidoverday
+            #totalDrank += (int(data[2][:(len(data[2])-1)])) #remove +i when actual data has been gathered
             print("drank",totalDrank)
             data2.append([time,totalDrank])
     #figure out at what point they drank the national average
@@ -134,7 +138,7 @@ def calabrate(path):
     #return
     prev_total = 0
     count = 0
-    print("Data",data2)
+    #print("Data",data2)
     for i,a in enumerate(data2):
         #print(data)
         #print("A",a[i])
@@ -144,7 +148,9 @@ def calabrate(path):
         if(a[1] >= national_average):
             print("returning 0")
             return 0
-    print("Finished the for loop")
+    #print("Finished the for loop")
+    if count == 0:
+        count = 1
     average_drank = int(data2[-1][1]) / int(count)
     print("Average drank", average_drank)
     #work out the difference between nation average and total consumed
@@ -154,10 +160,12 @@ def calabrate(path):
     if diff_average > 0 and average_drank > 0:
         #how many more time would they need to drink a day
         extra_drinks = diff_average / average_drank
+    if extra_drinks == 0:
+        return timeThreshold #if they have not drank anything yet, dont change the time
     #count is the amount of times they drank
     #they need to drink count+extra_drinks over the same time preiod
     #take the total time (in mins) and divide it by count+extra_drinks
-    print(data2[-1][0])
+    #print(data2[-1][0])
     newTimethreshold = math.ceil((convertTime("24:00") - int(data2[-1][0])) / extra_drinks)
     thing = [0,0]
     print("newtime",newTimethreshold)
@@ -168,6 +176,7 @@ def calabrate(path):
     else:
         thing[0] = 0
         thing[1] = newTimethreshold
+    #print(thing)
     return thing # represents the time threshold in the format [hours, mins]
 
 try:
@@ -179,7 +188,7 @@ try:
     raspberry_pi.calibrateScale()  # Calibrate scale to read grams
 
     # getTime
-    i = 0
+    i = 1
     t = time.localtime()
     t = time.strftime("%H:%M:%S", t)
 
@@ -187,7 +196,6 @@ try:
     # read in fluid level <------ after calibration this needs to happen
     current_fluid = raspberry_pi.hx.get_weight_mean(20) - weight_of_container_empty
     current_fluid = math.floor(current_fluid)
-    current_fluid = 1
     previous_fluid = current_fluid
     while i!=0:
         toldtodrink = False
@@ -197,7 +205,7 @@ try:
         hours = t[0:2]
         mins = t[3:5]
         current_time = [int(hours), int(mins)]
-        difference_time[0] += current_time[0] - previous_time[0]
+        #difference_time[0] += current_time[0] - previous_time[0]
         difference_time[1] += current_time[1] - previous_time[1]
         if (difference_time[1] > 59):
             difference_time[0] += 1
@@ -215,8 +223,10 @@ try:
         current_fluid = math.floor(current_fluid)
         print("Fluid:",current_fluid)
         #previous_fluid = math.floor(previous_fluid)
-        if current_fluid > previous_fluid:  # check if the container was filled
-            difference_fluid = current_fluid
+        #if current_fluid > (previous_fluid + 15):  # check if the container was filled
+            #difference_fluid = current_fluid - previous_fluid
+        if (previous_fluid - 5) < current_fluid < (previous_fluid + 7): #check if fluid hasn't change (with error)
+            difference_fluid = 0
         else:
             difference_fluid = previous_fluid - current_fluid
         previous_fluid = current_fluid
@@ -238,18 +248,19 @@ try:
         # if they dont drink next cycle mark it as false
         
         print("Diff time:", difference_time)
-        print("Diff fluid:", difference_fluid, "\n")
+        print("Diff fluid:", difference_fluid)
+        print("Time Threshold:",timeThreshold, "\n")
         # check time
         if difference_time[0] >= timeThreshold[0]:
-            print("Testing First if")
+            #print("Testing First if")
             if difference_time[1] >= timeThreshold[1]:
-                print("Flashing")
+                print("Flashing\n")
                 raspberry_pi.buzzLED_alarm(on_interval=1, off_interval=1, iterations=3)
                 toldtodrink = True
                 difference_time = [0, 0]
                 if (os.path.exists("data.txt")):
                     timeThreshold = calabrate("data.txt")
-                break  # remove after testing
+                #break  # remove after testing
         i += 1
         # write current_time,differnet_fluid to file
         write = str(current_time) + "," + str(difference_fluid)+"\n"
@@ -263,5 +274,5 @@ except (KeyboardInterrupt, SystemExit):
 
 finally:
     GPIO.cleanup()
-
+#plot("data.txt")
 #print(calabrate("data.txt"))
