@@ -39,14 +39,14 @@ def addtime(time, amount):
     return [newDays, newHours, newMins]
 
 def determineBottleWeights(raspberry_pi):
-    print("""
-Hi there! Welcome to the Watery water consumption observer. Thank you for 
-giving us a go. Before you can use Watery, we need to know the weight of
-your bottle when it is empty and when it filled up (or to the amount you
-usually fill it). To do so, just follow the next 2 steps.
-----------------------------------------------------------------------------
+    print("""\n
+Hi there! Welcome to Watery. Thank you for giving us a go. Before you can
+use Watery, we need to know the weight of your bottle when it is empty and
+when it filled up (or to the amount you usually fill it). To do so,
+just follow the next 2 steps.
+
 Step 1:
-Please completely empty your water bottle (if it is not empty already and
+Please completely empty your water bottle (if it is not empty already) and
 place it on the Watery measuring pad, then press Enter""")
     input()
     sleep(2)
