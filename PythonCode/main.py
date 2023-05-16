@@ -9,7 +9,7 @@ global timeThreshold
 current_time = [0,0] # [Hours, Mins]
 previous_time = [0,0] # [Hours, Mins]
 difference_time = [0,0] # [Hours, Mins]
-timeThreshold = [0,1] # [Hours, Mins] #should default to 1 hour
+timeThreshold = [1,0] # [Hours, Mins] #should default to 1 hour
 weight_of_container_empty = 14 # needed for scales to be calabrated
 weight_of_container_full = 514 # needed for scales to be calabrated
 toldtodrink = False
