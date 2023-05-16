@@ -227,7 +227,7 @@ This would not be presented to the end user.
     input("Hit Enter to start Watery\n")
 
     # getTime
-    i = 1
+    i = 0
     t = time.localtime()
     t = time.strftime("%H:%M:%S", t)
 
