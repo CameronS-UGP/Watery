@@ -6,7 +6,7 @@ import RPi.GPIO as GPIO
 from bottleScale import Board
 from time import sleep
 global timeThreshold
-
+global difference_time
 current_time = [0,0] # [Hours, Mins]
 previous_time = [0,0] # [Hours, Mins]
 difference_time = [0,0] # [Hours, Mins]
@@ -243,10 +243,16 @@ This would not be presented to the end user.
         mins = t[3:5]
         current_time = [int(hours), int(mins)]
         #difference_time[0] += current_time[0] - previous_time[0]
-        difference_time[1] += current_time[1] - previous_time[1]
-        if (difference_time[1] > 59):
-            difference_time[0] += 1
-            difference_time[1] -= 60
+        #difference_time[1] += current_time[1] - previous_time[1]
+        tim = convertTime(current_time) - convertTime(previous_time)
+        if (tim > 59):
+            hours = math.floor(tim/60)
+            mins = tim%60
+        else:
+            hours = 0
+            mins = tim
+        difference_time[0] += hours
+        difference_time[1] += mins
         previous_time = current_time
 
         # check fluid level
