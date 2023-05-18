@@ -10,7 +10,7 @@ global difference_time
 current_time = [0,0] # [Hours, Mins]
 previous_time = [0,0] # [Hours, Mins]
 difference_time = [0,0] # [Hours, Mins]
-timeThreshold = [1,0] # [Hours, Mins] #should default to 1 hour
+timeThreshold = [0,1] # [Hours, Mins] #should default to 1 hour
 weight_of_container_empty = 14 # needed for scales to be calabrated
 weight_of_container_full = 514 # needed for scales to be calabrated
 toldtodrink = False
@@ -157,7 +157,7 @@ def calabrate(path):
             if fluidoverday > 0:
                 totalDrank = fluidoverday
             #totalDrank += (int(data[2][:(len(data[2])-1)])) #remove +i when actual data has been gathered
-            print("drank",totalDrank)
+            print("Total intake:",totalDrank,"ml")
             data2.append([time,totalDrank])
     #figure out at what point they drank the national average
     #if they met this or got close to it by the end of the day (data set)
@@ -178,10 +178,10 @@ def calabrate(path):
     if count == 0:
         count = 1
     average_drank = int(data2[-1][1]) / int(count)
-    print("Average drank", average_drank)
+    print("Average intake", average_drank,"ml")
     #work out the difference between nation average and total consumed
     diff_average = national_average - data2[-1][1]
-    print("Diff average",diff_average)
+    print("Average difference",diff_average)
     extra_drinks = 0
     if diff_average > 0 and average_drank > 0:
         #how many more time would they need to drink a day
@@ -194,7 +194,7 @@ def calabrate(path):
     #print(data2[-1][0])
     newTimethreshold = math.ceil((convertTime("24:00") - int(data2[-1][0])) / extra_drinks)
     thing = [0,0]
-    print("newtime",newTimethreshold)
+    print("New drinking interval:",newTimethreshold,"(h,m)")
     if(newTimethreshold > 60):
         thing[0] = math.floor(newTimethreshold/60)
         newTimethreshold = newTimethreshold%60
@@ -227,7 +227,7 @@ This would not be presented to the end user.
     input("Hit Enter to start Watery\n")
 
     # getTime
-    i = 0
+    i = 1
     t = time.localtime()
     t = time.strftime("%H:%M:%S", t)
 
@@ -266,7 +266,7 @@ This would not be presented to the end user.
         current_fluid = raspberry_pi.hx.get_weight_mean(20) - weight_of_container_empty  # <---- some function that returns the current weight
         # ----------------
         current_fluid = math.floor(current_fluid)
-        print("Fluid:",current_fluid)
+        print("Fluid in container:",current_fluid,"ml")
         #previous_fluid = math.floor(previous_fluid)
         #if current_fluid > (previous_fluid + 15):  # check if the container was filled
             #difference_fluid = current_fluid - previous_fluid
@@ -292,14 +292,14 @@ This would not be presented to the end user.
         # if next cycle they drink mark it as true in the file
         # if they dont drink next cycle mark it as false
         
-        print("Diff time:", difference_time)
-        print("Diff fluid:", difference_fluid)
-        print("Time Threshold:",timeThreshold, "\n")
+        #print("Diff time:", difference_time)
+        #print("Diff fluid:", difference_fluid)
+        print("Time Threshold:",timeThreshold)
         # check time
         if difference_time[0] >= timeThreshold[0]:
             #print("Testing First if")
             if difference_time[1] >= timeThreshold[1]:
-                print("Flashing\n")
+                print("\n----Drink Some Water!----\n")
                 raspberry_pi.buzzLED_alarm(on_interval=1, off_interval=1, iterations=3)
                 toldtodrink = True
                 difference_time = [0, 0]
@@ -313,6 +313,7 @@ This would not be presented to the end user.
             f.write(write)
 
         time.sleep(10)
+        print("\n")
 
 except (KeyboardInterrupt, SystemExit):
     print('Exiting Code: 1')
