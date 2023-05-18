@@ -172,7 +172,7 @@ def calabrate(path):
             count+=1 # count the amount of times they drink
         prev_total = a[1]
         if(a[1] >= national_average):
-            print("returning 0")
+            #print("returning 0")
             return 0
     #print("Finished the for loop")
     if count == 0:
@@ -245,16 +245,19 @@ This would not be presented to the end user.
         mins = t[3:5]
         current_time = [int(hours), int(mins)]
         #difference_time[0] += current_time[0] - previous_time[0]
-        #difference_time[1] += current_time[1] - previous_time[1]
-        tim = convertTime(current_time) - convertTime(previous_time)
-        if (tim > 59):
-            hours = math.floor(tim/60)
-            mins = tim%60
-        else:
-            hours = 0
-            mins = tim
-        difference_time[0] += hours
-        difference_time[1] += mins
+        difference_time[1] += current_time[1] - previous_time[1]
+        if (difference_time[1] > 59):
+            difference_time[0] += 1
+            difference_time[1] -= 60
+        # tim = convertTime(current_time) - convertTime(previous_time)
+        # if (tim > 59):
+        #     hours = math.floor(tim/60)
+        #     mins = tim%60
+        # else:
+        #     hours = 0
+        #     mins = tim
+        # difference_time[0] += hours
+        # difference_time[1] += mins
         previous_time = current_time
 
         # check fluid level
